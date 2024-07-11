@@ -37,6 +37,9 @@ typedef struct RCUCloseFILE {
     FILE *fd;
 } RCUCloseFILE;
 
+static char *trace_filename;
+static FILE *trace_file;
+
 /* Mutex covering the other global_* variables. */
 static QemuMutex global_mutex;
 static char *global_filename;
@@ -156,9 +159,73 @@ void qemu_log(const char *fmt, ...)
     }
 }
 
+FILE *lk_trace_trylock(void)
+{
+    assert(trace_filename != NULL);
+    assert(trace_file != NULL);
+    flockfile(trace_file);
+    return trace_file;
+}
+
+void lk_trace_unlock(FILE *f)
+{
+    if (f) {
+        fflush(f);
+        funlockfile(f);
+    }
+}
+
+long lk_trace_head(FILE *f)
+{
+    if (f) {
+        long offset = ftell(f);
+        fseek(f, sizeof(trace_event_t), SEEK_CUR);
+        return offset;
+    }
+    return 0;
+}
+
+void lk_trace_submit(long offset, const trace_event_t *evt, FILE *f)
+{
+    if (f) {
+        long saved_offset = ftell(f);
+        fseek(f, offset, SEEK_SET);
+        fwrite(evt, sizeof(trace_event_t), 1, f);
+        fseek(f, saved_offset, SEEK_SET);
+    }
+}
+
+void lk_trace_payload(uint16_t index,
+                      trace_event_t *evt,
+                      const void *buf, size_t size,
+                      FILE *f)
+{
+    if (f) {
+        trace_payload_t payload;
+        payload.magic = LK_TRACE_PAYLOAD_MAGIC;
+        payload.index = index;
+        payload.size = size;
+
+        printf("### %s: fwrite %x %ld\n", __func__, LK_TRACE_PAYLOAD_MAGIC, ftell(f));
+        fwrite(&payload, sizeof(payload), 1, f);
+        fwrite(buf, 1, size, f);
+        evt->totalsize += sizeof(payload) + size;
+    }
+}
+
+void lk_trace_init(trace_event_t *event)
+{
+    memset(event, 0, sizeof(trace_event_t));
+    event->magic = LK_TRACE_MAGIC;
+    event->headsize = sizeof(trace_event_t);
+    event->totalsize = event->headsize;
+}
+
 static void __attribute__((__constructor__)) startup(void)
 {
     qemu_mutex_init(&global_mutex);
+    trace_filename = g_strdup("lk_trace.data");
+    trace_file = fopen(trace_filename, "w");
 }
 
 static void rcu_close_file(RCUCloseFILE *r)

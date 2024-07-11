@@ -33,6 +33,7 @@
 #include "cpu_bits.h"
 #include "debug.h"
 #include "tcg/oversized-guest.h"
+#include "syscall_trace.h"
 
 int riscv_env_mmu_index(CPURISCVState *env, bool ifetch)
 {
@@ -1750,6 +1751,23 @@ void riscv_cpu_do_interrupt(CPUState *cs)
                   "epc:0x"TARGET_FMT_lx", tval:0x"TARGET_FMT_lx", desc=%s\n",
                   __func__, env->mhartid, async, cause, env->pc, tval,
                   riscv_cpu_get_trap_name(cause, async));
+
+    if (env->priv == PRV_U && cause == 8) {
+        trace_event_t evt;
+        lk_trace_init(&evt);
+        evt.inout = 0;
+        evt.cause = cause;
+        evt.epc = env->pc;
+        memcpy(evt.ax, &env->gpr[xA0], 8 * sizeof(uint64_t));
+
+        FILE *f = lk_trace_trylock();
+        long offset = lk_trace_head(f);
+        handle_payload(cs, &evt, f);
+        lk_trace_submit(offset, &evt, f);
+        lk_trace_unlock(f);
+
+        env->last_scause = 8;
+    }
 
     if (env->priv <= PRV_S && cause < 64 &&
         (((deleg >> cause) & 1) || s_injected || vs_injected)) {

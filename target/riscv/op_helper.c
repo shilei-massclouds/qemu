@@ -19,6 +19,7 @@
  */
 
 #include "qemu/osdep.h"
+#include "qemu/log.h"
 #include "cpu.h"
 #include "internals.h"
 #include "exec/exec-all.h"
@@ -312,6 +313,24 @@ target_ulong helper_sret(CPURISCVState *env)
     }
 
     riscv_cpu_set_mode(env, prev_priv);
+
+    if (prev_priv == PRV_U) {
+        if (env->last_scause) {
+            trace_event_t evt;
+            lk_trace_init(&evt);
+            evt.inout = 1;
+            evt.cause = env->last_scause;
+            evt.epc = env->sepc;
+            memcpy(evt.ax, &env->gpr[xA0], 8 * sizeof(uint64_t));
+
+            FILE *f = lk_trace_trylock();
+            long offset = lk_trace_head(f);
+            lk_trace_submit(offset, &evt, f);
+            lk_trace_unlock(f);
+
+            env->last_scause = 0;
+        }
+    }
 
     return retpc;
 }

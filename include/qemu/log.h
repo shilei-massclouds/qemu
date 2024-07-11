@@ -38,6 +38,37 @@ bool qemu_log_separate(void);
 #define CPU_LOG_TB_VPU     (1 << 21)
 #define LOG_TB_OP_PLUGIN   (1 << 22)
 
+#define LK_TRACE_MAGIC 0xABCD
+#define LK_TRACE_PAYLOAD_MAGIC 0xDCBA
+
+typedef struct _trace_event_t {
+    uint16_t magic;
+    uint16_t headsize;
+    uint32_t totalsize;
+    uint64_t inout;
+    uint64_t cause;
+    uint64_t epc;
+    uint64_t ax[8];
+} trace_event_t;
+
+typedef struct _trace_payload_t {
+    uint16_t magic;
+    uint16_t index;
+    uint32_t size;
+} trace_payload_t;
+
+void lk_trace_init(trace_event_t *evt);
+
+FILE *lk_trace_trylock(void);
+void lk_trace_unlock(FILE *f);
+
+long lk_trace_head(FILE *f);
+void lk_trace_payload(uint16_t index,
+                      trace_event_t *evt,
+                      const void *buf, size_t size,
+                      FILE *f);
+void lk_trace_submit(long head_offset, const trace_event_t *evt, FILE *f);
+
 /* Lock/unlock output. */
 
 FILE *qemu_log_trylock(void) G_GNUC_WARN_UNUSED_RESULT;
