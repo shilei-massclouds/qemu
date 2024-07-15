@@ -25,6 +25,7 @@
 #include "exec/exec-all.h"
 #include "exec/cpu_ldst.h"
 #include "exec/helper-proto.h"
+#include "syscall_trace.h"
 
 /* Exceptions processing helpers */
 G_NORETURN void riscv_raise_exception(CPURISCVState *env,
@@ -266,6 +267,7 @@ target_ulong helper_sret(CPURISCVState *env)
 {
     uint64_t mstatus;
     target_ulong prev_priv, prev_virt;
+    CPUState *cs = env_cpu(env);
 
     if (!(env->priv >= PRV_S)) {
         riscv_raise_exception(env, RISCV_EXCP_ILLEGAL_INST, GETPC());
@@ -314,22 +316,24 @@ target_ulong helper_sret(CPURISCVState *env)
 
     riscv_cpu_set_mode(env, prev_priv);
 
-    if (prev_priv == PRV_U) {
-        if (env->last_scause) {
-            trace_event_t evt;
-            lk_trace_init(&evt);
-            evt.inout = 1;
-            evt.cause = env->last_scause;
-            evt.epc = env->sepc;
-            memcpy(evt.ax, &env->gpr[xA0], 8 * sizeof(uint64_t));
+    if (prev_priv == PRV_U && env->last_scause) {
+        trace_event_t evt;
+        lk_trace_init(&evt);
+        evt.inout = 1;
+        evt.cause = env->last_scause;
+        evt.epc = env->sepc;
+        memcpy(evt.ax, &env->gpr[xA0], 8 * sizeof(uint64_t));
+        evt.usp = env->gpr[xSP];
+        evt.orig_a0 = env->last_a0;
 
-            FILE *f = lk_trace_trylock();
-            long offset = lk_trace_head(f);
-            lk_trace_submit(offset, &evt, f);
-            lk_trace_unlock(f);
+        FILE *f = lk_trace_trylock();
+        long offset = lk_trace_head(f);
+        handle_payload_out(cs, &evt, f);
+        lk_trace_submit(offset, &evt, f);
+        lk_trace_unlock(f);
 
-            env->last_scause = 0;
-        }
+        env->last_scause = 0;
+        env->last_a0 = 0;
     }
 
     return retpc;

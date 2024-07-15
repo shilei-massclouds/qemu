@@ -49,6 +49,9 @@ typedef struct _trace_event_t {
     uint64_t cause;
     uint64_t epc;
     uint64_t ax[8];
+    uint64_t usp;
+    uint64_t stack[8];
+    uint64_t orig_a0;
 } trace_event_t;
 
 typedef struct _trace_payload_t {

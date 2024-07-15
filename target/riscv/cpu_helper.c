@@ -1759,14 +1759,16 @@ void riscv_cpu_do_interrupt(CPUState *cs)
         evt.cause = cause;
         evt.epc = env->pc;
         memcpy(evt.ax, &env->gpr[xA0], 8 * sizeof(uint64_t));
+        evt.usp = env->gpr[xSP];
 
         FILE *f = lk_trace_trylock();
         long offset = lk_trace_head(f);
-        handle_payload(cs, &evt, f);
+        handle_payload_in(cs, &evt, f);
         lk_trace_submit(offset, &evt, f);
         lk_trace_unlock(f);
 
         env->last_scause = 8;
+        env->last_a0 = env->gpr[xA0];
     }
 
     if (env->priv <= PRV_S && cause < 64 &&
