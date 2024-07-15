@@ -32,9 +32,17 @@ static void do_faccessat(CPUState *cs, trace_event_t *evt, FILE *f)
     handle_path(1, cs, evt, f);
 }
 
-static void do_fstatat(CPUState *cs, trace_event_t *evt, FILE *f)
+static void do_fstatat_in(CPUState *cs, trace_event_t *evt, FILE *f)
 {
     handle_path(1, cs, evt, f);
+}
+
+static void do_fstatat_out(CPUState *cs, trace_event_t *evt, FILE *f)
+{
+    // sizeof(struct stat): 128 bytes.
+    uint8_t data[128];
+    cpu_memory_rw_debug(cs, evt->ax[2], data, sizeof(data), 0);
+    lk_trace_payload(2, evt, data, sizeof(data), f);
 }
 
 // args[0]: new_utsname
@@ -57,7 +65,7 @@ void handle_payload_in(CPUState *cs, trace_event_t *evt, FILE *f)
         do_faccessat(cs, evt, f);
         break;
     case __NR_fstatat:
-        do_fstatat(cs, evt, f);
+        do_fstatat_in(cs, evt, f);
         break;
     default:
         ;
@@ -66,10 +74,17 @@ void handle_payload_in(CPUState *cs, trace_event_t *evt, FILE *f)
 
 void handle_payload_out(CPUState *cs, trace_event_t *evt, FILE *f)
 {
+    if (evt->ax[0] != 0) {
+        return;
+    }
+
     switch (evt->ax[7])
     {
     case __NR_uname:
         do_uname(cs, evt, f);
+        break;
+    case __NR_fstatat:
+        do_fstatat_out(cs, evt, f);
         break;
     default:
         ;

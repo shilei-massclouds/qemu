@@ -206,7 +206,7 @@ void lk_trace_payload(uint16_t index,
         payload.index = index;
         payload.size = size;
 
-        printf("### %s: fwrite %x %ld\n", __func__, LK_TRACE_PAYLOAD_MAGIC, ftell(f));
+        //printf("### %s: fwrite %x %ld\n", __func__, LK_TRACE_PAYLOAD_MAGIC, ftell(f));
         fwrite(&payload, sizeof(payload), 1, f);
         fwrite(buf, 1, size, f);
         evt->totalsize += sizeof(payload) + size;

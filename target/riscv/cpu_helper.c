@@ -1752,7 +1752,7 @@ void riscv_cpu_do_interrupt(CPUState *cs)
                   __func__, env->mhartid, async, cause, env->pc, tval,
                   riscv_cpu_get_trap_name(cause, async));
 
-    if (env->priv == PRV_U && cause == 8) {
+    if (env->priv == PRV_U && cause == RISCV_EXCP_U_ECALL) {
         trace_event_t evt;
         lk_trace_init(&evt);
         evt.inout = 0;
@@ -1767,7 +1767,7 @@ void riscv_cpu_do_interrupt(CPUState *cs)
         lk_trace_submit(offset, &evt, f);
         lk_trace_unlock(f);
 
-        env->last_scause = 8;
+        env->last_scause = RISCV_EXCP_U_ECALL;
         env->last_a0 = env->gpr[xA0];
     }
 
