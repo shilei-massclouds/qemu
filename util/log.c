@@ -192,6 +192,7 @@ void lk_trace_submit(long offset, const trace_event_t *evt, FILE *f)
         fseek(f, offset, SEEK_SET);
         fwrite(evt, sizeof(trace_event_t), 1, f);
         fseek(f, saved_offset, SEEK_SET);
+        //printf("%s: total %d\n", __func__, evt->totalsize);
     }
 }
 
@@ -206,7 +207,6 @@ void lk_trace_payload(uint16_t index,
         payload.index = index;
         payload.size = size;
 
-        //printf("### %s: fwrite %x %ld\n", __func__, LK_TRACE_PAYLOAD_MAGIC, ftell(f));
         fwrite(&payload, sizeof(payload), 1, f);
         fwrite(buf, 1, size, f);
         evt->totalsize += sizeof(payload) + size;

@@ -1763,7 +1763,6 @@ void riscv_cpu_do_interrupt(CPUState *cs)
 
         FILE *f = lk_trace_trylock();
         long offset = lk_trace_head(f);
-        handle_payload_in(cs, &evt, f);
         lk_trace_submit(offset, &evt, f);
         lk_trace_unlock(f);
 
