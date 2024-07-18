@@ -68,6 +68,21 @@ static void do_write_evt(CPUState *cs, trace_event_t *evt, FILE *f)
     free(data);
 }
 
+static void do_read_evt(CPUState *cs, trace_event_t *evt, FILE *f)
+{
+    uint64_t actual_read_size = evt->ax[0];
+    uint8_t* data = calloc(actual_read_size,sizeof(uint8_t));
+    if (data == NULL) 
+    {
+        printf("qemu malloc failed while do_read_evt");
+        return ;
+    }
+    cpu_memory_rw_debug(cs, evt->ax[1], data, sizeof(uint8_t)*(actual_read_size), 0);
+    formalize_str(data,sizeof(uint8_t)*(actual_read_size));
+    lk_trace_payload(1, evt, data, sizeof(uint8_t)*(actual_read_size), f);  
+    free(data);
+}
+
 /*
 void handle_payload_in(CPUState *cs, trace_event_t *evt, FILE *f)
 {
@@ -93,6 +108,9 @@ void handle_payload_out(CPUState *cs, trace_event_t *evt, FILE *f)
         break;
     case __NR_faccessat:
         do_faccessat(cs, evt, f);
+        break;
+    case __NR_read:
+        do_read_evt(cs, evt, f);
         break;
     case __NR_write:
         do_write_evt(cs, evt, f);
