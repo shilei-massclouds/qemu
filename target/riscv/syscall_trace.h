@@ -14,6 +14,7 @@
 #define __NR_openat     56
 #define __NR_read       63
 #define __NR_write      64
+#define __NR_writev     66
 #define __NR_fstatat    79
 
 #define __NR_set_tid_address 96
@@ -21,6 +22,7 @@
 
 #define __NR_uname      160
 #define __NR_brk        214
+#define __NR_execve     221
 #define __NR_mmap       222
 #define __NR_mprotect   226
 #define __NR_prlimit64  261

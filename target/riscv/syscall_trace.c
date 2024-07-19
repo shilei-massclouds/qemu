@@ -53,48 +53,73 @@ static void do_uname(CPUState *cs, trace_event_t *evt, FILE *f)
     }
 }
 
-static void do_write_evt(CPUState *cs, trace_event_t *evt, FILE *f)
-{
-    uint64_t actual_write_size = evt->ax[0];
-    uint8_t* data = calloc(actual_write_size,sizeof(uint8_t));
-    if (data == NULL) 
-    {
-        printf("qemu malloc failed while do_write_evt");
+static void handle_string_at_heap(int index, uint64_t size, CPUState *cs, trace_event_t *evt, FILE *f) {
+    uint8_t* data = malloc(size*sizeof(uint8_t));
+    if (data == NULL) {
+        fprintf(stderr,"qemu malloc failed");
         return ;
     }
-    cpu_memory_rw_debug(cs, evt->ax[1], data, sizeof(uint8_t)*(actual_write_size), 0);
-    formalize_str(data,sizeof(uint8_t)*(actual_write_size));
-    lk_trace_payload(1, evt, data, sizeof(uint8_t)*(actual_write_size), f);  
+    cpu_memory_rw_debug(cs, evt->ax[1], data, sizeof(uint8_t)*(size), 0);
+    formalize_str(data,sizeof(uint8_t)*size);
+    lk_trace_payload(index, evt, data, sizeof(uint8_t)*size, f);
     free(data);
 }
-
-static void do_read_evt(CPUState *cs, trace_event_t *evt, FILE *f)
+static void do_write_event(CPUState *cs, trace_event_t *evt, FILE *f)
 {
-    uint64_t actual_read_size = evt->ax[0];
-    uint8_t* data = calloc(actual_read_size,sizeof(uint8_t));
-    if (data == NULL) 
-    {
-        printf("qemu malloc failed while do_read_evt");
-        return ;
-    }
-    cpu_memory_rw_debug(cs, evt->ax[1], data, sizeof(uint8_t)*(actual_read_size), 0);
-    formalize_str(data,sizeof(uint8_t)*(actual_read_size));
-    lk_trace_payload(1, evt, data, sizeof(uint8_t)*(actual_read_size), f);  
-    free(data);
+    uint64_t actual_write_size = evt->ax[0]+1;// + 1 for \0 and if error -1+1 == 0
+    handle_string_at_heap(1,actual_write_size,cs,evt,f);
 }
 
-/*
+static void do_writev_event(CPUState *cs, trace_event_t *evt, FILE *f)
+{
+    uint64_t actual_write_size = evt->ax[0]+1;// + 1 for \0 and if error -1+1 == 0
+    handle_string_at_heap(1,actual_write_size,cs,evt,f);
+}
+
+static void do_read_event(CPUState *cs, trace_event_t *evt, FILE *f)
+{
+    uint64_t actual_write_size = evt->ax[0]+1;// + 1 for \0 and if error -1+1 == 0
+    handle_string_at_heap(1,actual_write_size,cs,evt,f);
+}
+
+static void do_execve(CPUState *cs, trace_event_t *evt, FILE *f)
+{
+    handle_path(0, cs, evt, f);
+    uint64_t argc = 0;
+    char *const argv;
+    cpu_memory_rw_debug(cs, evt->ax[1], (uint8_t *)&argv, sizeof(char *), 0);
+    while (argv != NULL) {
+        argc += 1;
+        uint8_t data[64]; // just reserve 64 bytes.
+        cpu_memory_rw_debug(cs, (uint64_t)argv, data, sizeof(data), 0);
+        formalize_str(data, sizeof(data));
+        lk_trace_payload(1, evt, data, sizeof(data), f);
+        cpu_memory_rw_debug(cs, evt->ax[1]+argc*sizeof(char *), (uint8_t *)&argv, sizeof(char *), 0);
+    }
+    uint64_t envc = 0;
+    char *const envp;
+    cpu_memory_rw_debug(cs, evt->ax[2], (uint8_t *)&envp, sizeof(char *), 0);
+    while (envp != NULL) {
+        envc += 1; 
+        uint8_t data[64]; // just reserve 64 bytes.
+        cpu_memory_rw_debug(cs, (uint64_t)envp, data, sizeof(data), 0);
+        formalize_str(data, sizeof(data));
+        lk_trace_payload(2, evt, data, sizeof(data), f);
+        cpu_memory_rw_debug(cs, evt->ax[2]+envc*sizeof(char *), (uint8_t *)&envp, sizeof(char *), 0);
+    }
+}
+
 void handle_payload_in(CPUState *cs, trace_event_t *evt, FILE *f)
 {
     switch (evt->ax[7])
     {
-    case __NR_fstatat:
+    case __NR_execve:
+        do_execve(cs, evt, f);
         break;
     default:
         ;
     }
 }
-*/
 
 void handle_payload_out(CPUState *cs, trace_event_t *evt, FILE *f)
 {
@@ -110,10 +135,13 @@ void handle_payload_out(CPUState *cs, trace_event_t *evt, FILE *f)
         do_faccessat(cs, evt, f);
         break;
     case __NR_read:
-        do_read_evt(cs, evt, f);
+        do_read_event(cs, evt, f);
         break;
     case __NR_write:
-        do_write_evt(cs, evt, f);
+        do_write_event(cs, evt, f);
+        break;
+    case __NR_writev:
+        do_writev_event(cs, evt, f);
         break;
     case __NR_fstatat:
         handle_path(1, cs, evt, f);
