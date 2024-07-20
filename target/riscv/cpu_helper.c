@@ -1752,6 +1752,15 @@ void riscv_cpu_do_interrupt(CPUState *cs)
                   __func__, env->mhartid, async, cause, env->pc, tval,
                   riscv_cpu_get_trap_name(cause, async));
 
+    // Todo: get #PF excp as helper information.
+    /*
+    if (cause == RISCV_EXCP_INST_PAGE_FAULT ||
+        cause == RISCV_EXCP_LOAD_PAGE_FAULT ||
+        cause == RISCV_EXCP_STORE_PAGE_FAULT) {
+        printf("#PF: cause:%lx, epc:%lx, badaddr:%lx priv:%lx\n", cause, env->pc, tval, env->priv);
+    }
+    */
+
     if (env->priv == PRV_U && cause == RISCV_EXCP_U_ECALL) {
         trace_event_t evt;
         lk_trace_init(&evt);
