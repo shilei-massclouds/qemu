@@ -1752,7 +1752,16 @@ void riscv_cpu_do_interrupt(CPUState *cs)
                   __func__, env->mhartid, async, cause, env->pc, tval,
                   riscv_cpu_get_trap_name(cause, async));
 
-    if (env->priv == PRV_U && cause == RISCV_EXCP_U_ECALL) {    
+    // Todo: get #PF excp as helper information.
+    /*
+    if (cause == RISCV_EXCP_INST_PAGE_FAULT ||
+        cause == RISCV_EXCP_LOAD_PAGE_FAULT ||
+        cause == RISCV_EXCP_STORE_PAGE_FAULT) {
+        printf("#PF: cause:%lx, epc:%lx, badaddr:%lx priv:%lx\n", cause, env->pc, tval, env->priv);
+    }
+    */
+
+    if (env->priv == PRV_U && cause == RISCV_EXCP_U_ECALL) {
         trace_event_t evt;
         lk_trace_init(&evt);
         evt.inout = 0;
@@ -1760,6 +1769,9 @@ void riscv_cpu_do_interrupt(CPUState *cs)
         evt.epc = env->pc;
         memcpy(evt.ax, &env->gpr[xA0], 8 * sizeof(uint64_t));
         evt.usp = env->gpr[xSP];
+        evt.satp = env->satp;
+        evt.tp = env->gpr[xTP];
+        evt.sscratch = env->sscratch;
 
         FILE *f = lk_trace_trylock();
         long offset = lk_trace_head(f);
@@ -1769,6 +1781,10 @@ void riscv_cpu_do_interrupt(CPUState *cs)
 
         env->last_scause = RISCV_EXCP_U_ECALL;
         env->last_a0 = env->gpr[xA0];
+
+#if 1
+        printf("[in:%lu] tp: %lx sscratch: %lx\n", env->gpr[xA7], env->gpr[xTP], env->sscratch);
+#endif
     }
 
     if (env->priv <= PRV_S && cause < 64 &&

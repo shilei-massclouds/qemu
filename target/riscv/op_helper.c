@@ -325,6 +325,9 @@ target_ulong helper_sret(CPURISCVState *env)
         memcpy(evt.ax, &env->gpr[xA0], 8 * sizeof(uint64_t));
         evt.usp = env->gpr[xSP];
         evt.orig_a0 = env->last_a0;
+        evt.satp = env->satp;
+        evt.tp = env->gpr[xTP];
+        evt.sscratch = env->sscratch;
 
         FILE *f = lk_trace_trylock();
         long offset = lk_trace_head(f);
@@ -334,6 +337,10 @@ target_ulong helper_sret(CPURISCVState *env)
 
         env->last_scause = 0;
         env->last_a0 = 0;
+
+#if 1
+        printf("[out:%lu] tp: %lx sscratch: %lx\n", env->gpr[xA7], env->gpr[xTP], env->sscratch);
+#endif
     }
 
     return retpc;
