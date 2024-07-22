@@ -26,7 +26,7 @@
 #define __NR_prlimit64  261
 #define __NR_getrandom  278
 
-void handle_payload_in(CPUState *cs, trace_event_t *evt, FILE *f);
+//void handle_payload_in(CPUState *cs, trace_event_t *evt, FILE *f);
 void handle_payload_out(CPUState *cs, trace_event_t *evt, FILE *f);
 
 #endif /* RISCV_SYSCALL_TRACE_H */

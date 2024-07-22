@@ -1769,6 +1769,9 @@ void riscv_cpu_do_interrupt(CPUState *cs)
         evt.epc = env->pc;
         memcpy(evt.ax, &env->gpr[xA0], 8 * sizeof(uint64_t));
         evt.usp = env->gpr[xSP];
+        evt.satp = env->satp;
+        evt.tp = env->gpr[xTP];
+        evt.sscratch = env->sscratch;
 
         FILE *f = lk_trace_trylock();
         long offset = lk_trace_head(f);
@@ -1777,6 +1780,10 @@ void riscv_cpu_do_interrupt(CPUState *cs)
 
         env->last_scause = RISCV_EXCP_U_ECALL;
         env->last_a0 = env->gpr[xA0];
+
+#if 1
+        printf("[in:%lu] tp: %lx sscratch: %lx\n", env->gpr[xA7], env->gpr[xTP], env->sscratch);
+#endif
     }
 
     if (env->priv <= PRV_S && cause < 64 &&

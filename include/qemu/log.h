@@ -52,6 +52,9 @@ typedef struct _trace_event_t {
     uint64_t usp;
     uint64_t stack[8];
     uint64_t orig_a0;
+    uint64_t satp;
+    uint64_t tp;
+    uint64_t sscratch;
 } trace_event_t;
 
 typedef struct _trace_payload_t {
