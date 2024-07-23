@@ -66,27 +66,35 @@ static void handle_string_at_heap(int index, uint64_t size, CPUState *cs, trace_
 }
 static void do_write_event(CPUState *cs, trace_event_t *evt, FILE *f)
 {
-    uint64_t actual_write_size = evt->ax[0]+1;// + 1 for \0 and if error -1+1 == 0
-    handle_string_at_heap(1,actual_write_size,cs,evt,f);
+    if (evt->orig_a0 == 1 || evt->orig_a0 == 2) {
+        uint64_t actual_write_size = evt->ax[0]+1;// + 1 for \0 and if error -1+1 == 0
+        handle_string_at_heap(1,actual_write_size,cs,evt,f);
+    }
 }
 
+/*
 static void do_writev_event(CPUState *cs, trace_event_t *evt, FILE *f)
 {
     uint64_t actual_write_size = evt->ax[0]+1;// + 1 for \0 and if error -1+1 == 0
     handle_string_at_heap(1,actual_write_size,cs,evt,f);
 }
+*/
 
 static void do_read_event(CPUState *cs, trace_event_t *evt, FILE *f)
 {
-    uint64_t actual_write_size = evt->ax[0]+1;// + 1 for \0 and if error -1+1 == 0
-    handle_string_at_heap(1,actual_write_size,cs,evt,f);
+    if (evt->orig_a0 == 0) {
+        uint64_t actual_write_size = evt->ax[0]+1;// + 1 for \0 and if error -1+1 == 0
+        handle_string_at_heap(1,actual_write_size,cs,evt,f);
+    }
 }
 
 static void do_execve(CPUState *cs, trace_event_t *evt, FILE *f)
 {
-    handle_path(0, cs, evt, f);
     uint64_t argc = 0;
     char *const argv;
+
+    handle_path(0, cs, evt, f);
+
     cpu_memory_rw_debug(cs, evt->ax[1], (uint8_t *)&argv, sizeof(char *), 0);
     while (argv != NULL) {
         argc += 1;
@@ -100,7 +108,7 @@ static void do_execve(CPUState *cs, trace_event_t *evt, FILE *f)
     char *const envp;
     cpu_memory_rw_debug(cs, evt->ax[2], (uint8_t *)&envp, sizeof(char *), 0);
     while (envp != NULL) {
-        envc += 1; 
+        envc += 1;
         uint8_t data[64]; // just reserve 64 bytes.
         cpu_memory_rw_debug(cs, (uint64_t)envp, data, sizeof(data), 0);
         formalize_str(data, sizeof(data));
@@ -140,9 +148,11 @@ void handle_payload_out(CPUState *cs, trace_event_t *evt, FILE *f)
     case __NR_write:
         do_write_event(cs, evt, f);
         break;
+        /*
     case __NR_writev:
         do_writev_event(cs, evt, f);
         break;
+        */
     case __NR_fstatat:
         handle_path(1, cs, evt, f);
         do_fstatat_out(cs, evt, f);
