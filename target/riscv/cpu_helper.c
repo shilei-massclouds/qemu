@@ -1782,7 +1782,7 @@ void riscv_cpu_do_interrupt(CPUState *cs)
         env->last_scause = RISCV_EXCP_U_ECALL;
         env->last_a0 = env->gpr[xA0];
 
-#if 1
+#if 0
         printf("[in:%lu] tp: %lx sscratch: %lx\n", env->gpr[xA7], env->gpr[xTP], env->sscratch);
 #endif
     }

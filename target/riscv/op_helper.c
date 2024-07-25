@@ -338,7 +338,7 @@ target_ulong helper_sret(CPURISCVState *env)
         env->last_scause = 0;
         env->last_a0 = 0;
 
-#if 1
+#if 0
         printf("[out:%lu] tp: %lx sscratch: %lx\n", env->gpr[xA7], env->gpr[xTP], env->sscratch);
 #endif
     }
