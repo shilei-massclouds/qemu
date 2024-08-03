@@ -117,6 +117,16 @@ static void do_execve(CPUState *cs, trace_event_t *evt, FILE *f)
     }
 }
 
+static void do_rt_sigaction(CPUState *cs, trace_event_t *evt, FILE *f)
+{
+    // sizeof(struct new_utsname) is 390, 8bytes-alignment
+    uint8_t data[24];
+    if (evt->ax[0] == 0) {
+        cpu_memory_rw_debug(cs, evt->ax[1], data, sizeof(data), 0);
+        lk_trace_payload(1, evt, data, sizeof(data), f);
+    }
+}
+
 void handle_payload_in(CPUState *cs, trace_event_t *evt, FILE *f)
 {
     switch (evt->ax[7])
@@ -147,6 +157,9 @@ void handle_payload_out(CPUState *cs, trace_event_t *evt, FILE *f)
         break;
     case __NR_write:
         do_write_event(cs, evt, f);
+        break;
+    case __NR_rt_sigaction:
+        do_rt_sigaction(cs, evt, f);
         break;
         /*
     case __NR_writev:
