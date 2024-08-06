@@ -119,7 +119,16 @@ static void do_execve(CPUState *cs, trace_event_t *evt, FILE *f)
 
 static void do_rt_sigaction(CPUState *cs, trace_event_t *evt, FILE *f)
 {
-    // sizeof(struct new_utsname) is 390, 8bytes-alignment
+    //
+    // Type of argv[1] is sigaction.
+    // struct sigaction {
+    //     __sighandler_t sa_handler;
+    //     unsigned long sa_flags;
+    //     sigset_t sa_mask;       /* mask last for extensibility */
+    // };
+    // Its size is 24.
+    //
+
     uint8_t data[24];
     if (evt->ax[0] == 0) {
         cpu_memory_rw_debug(cs, evt->ax[1], data, sizeof(data), 0);
