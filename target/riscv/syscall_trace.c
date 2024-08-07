@@ -13,10 +13,10 @@ static void formalize_str(uint8_t *data, size_t size)
     }
 }
 
-static void handle_path(int index, CPUState *cs, trace_event_t *evt, FILE *f)
+static void handle_path(int index, uint64_t addr, CPUState *cs, trace_event_t *evt, FILE *f)
 {
     uint8_t data[64];
-    cpu_memory_rw_debug(cs, evt->ax[index], data, sizeof(data), 0);
+    cpu_memory_rw_debug(cs, addr, data, sizeof(data), 0);
     formalize_str(data, sizeof(data));
     lk_trace_payload(index, evt, data, sizeof(data), f);
 }
@@ -24,12 +24,12 @@ static void handle_path(int index, CPUState *cs, trace_event_t *evt, FILE *f)
 // args[1]: path (cstr)
 static void do_openat(CPUState *cs, trace_event_t *evt, FILE *f)
 {
-    handle_path(1, cs, evt, f);
+    handle_path(1, evt->ax[1], cs, evt, f);
 }
 
 static void do_faccessat(CPUState *cs, trace_event_t *evt, FILE *f)
 {
-    handle_path(1, cs, evt, f);
+    handle_path(1, evt->ax[1], cs, evt, f);
 }
 
 static void do_fstatat_out(CPUState *cs, trace_event_t *evt, FILE *f)
@@ -93,7 +93,7 @@ static void do_execve(CPUState *cs, trace_event_t *evt, FILE *f)
     uint64_t argc = 0;
     char *const argv;
 
-    handle_path(0, cs, evt, f);
+    handle_path(0, evt->ax[0], cs, evt, f);
 
     cpu_memory_rw_debug(cs, evt->ax[1], (uint8_t *)&argv, sizeof(char *), 0);
     while (argv != NULL) {
@@ -136,6 +136,17 @@ static void do_rt_sigaction(CPUState *cs, trace_event_t *evt, FILE *f)
     }
 }
 
+static void do_statfs64(CPUState *cs, trace_event_t *evt, FILE *f)
+{
+    handle_path(0, evt->orig_a0, cs, evt, f);
+    // sizeof(struct statfs64) is 88 bytes.
+    uint8_t data[120];
+    if (evt->ax[0] == 0) {
+        cpu_memory_rw_debug(cs, evt->ax[1], data, sizeof(data), 0);
+        lk_trace_payload(1, evt, data, sizeof(data), f);
+    }
+}
+
 void handle_payload_in(CPUState *cs, trace_event_t *evt, FILE *f)
 {
     switch (evt->ax[7])
@@ -170,13 +181,16 @@ void handle_payload_out(CPUState *cs, trace_event_t *evt, FILE *f)
     case __NR_rt_sigaction:
         do_rt_sigaction(cs, evt, f);
         break;
+    case __NR_statfs64:
+        do_statfs64(cs, evt, f);
+        break;
         /*
     case __NR_writev:
         do_writev_event(cs, evt, f);
         break;
         */
     case __NR_fstatat:
-        handle_path(1, cs, evt, f);
+        handle_path(1, evt->ax[1], cs, evt, f);
         do_fstatat_out(cs, evt, f);
         break;
     default:
