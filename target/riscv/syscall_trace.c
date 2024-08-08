@@ -147,6 +147,11 @@ static void do_statfs64(CPUState *cs, trace_event_t *evt, FILE *f)
     }
 }
 
+static void do_mknodat(CPUState *cs, trace_event_t *evt, FILE *f)
+{
+    handle_path(1, evt->ax[1], cs, evt, f);
+}
+
 void handle_payload_in(CPUState *cs, trace_event_t *evt, FILE *f)
 {
     switch (evt->ax[7])
@@ -163,6 +168,9 @@ void handle_payload_out(CPUState *cs, trace_event_t *evt, FILE *f)
 {
     switch (evt->ax[7])
     {
+    case __NR_mknodat:
+        do_mknodat(cs, evt, f);
+        break;
     case __NR_openat:
         do_openat(cs, evt, f);
         break;

@@ -10,6 +10,7 @@
 #include "cpu.h"
 
 #define __NR_ioctl      29
+#define __NR_mknodat    33
 #define __NR_statfs64   43
 #define __NR_faccessat  48
 #define __NR_openat     56
