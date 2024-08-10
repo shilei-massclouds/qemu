@@ -152,6 +152,40 @@ static void do_mknodat(CPUState *cs, trace_event_t *evt, FILE *f)
     handle_path(1, evt->ax[1], cs, evt, f);
 }
 
+static void do_getcwd(CPUState *cs, trace_event_t *evt, FILE *f)
+{
+    handle_path(0, evt->orig_a0, cs, evt, f);
+}
+
+static void do_mkdirat(CPUState *cs, trace_event_t *evt, FILE *f)
+{
+    handle_path(1, evt->ax[1], cs, evt, f);
+}
+
+static void do_unlinkat(CPUState *cs, trace_event_t *evt, FILE *f)
+{
+    handle_path(1, evt->ax[1], cs, evt, f);
+}
+
+static void do_chdir(CPUState *cs, trace_event_t *evt, FILE *f)
+{
+    handle_path(0, evt->orig_a0, cs, evt, f);
+}
+static void do_mount(CPUState *cs, trace_event_t *evt, FILE *f)
+{
+    handle_path(0, evt->orig_a0, cs, evt, f);
+}
+
+static void do_fchmodat(CPUState *cs, trace_event_t *evt, FILE *f)
+{
+    handle_path(1, evt->ax[1], cs, evt, f);
+}
+
+static void do_fchownat(CPUState *cs, trace_event_t *evt, FILE *f)
+{
+    handle_path(1, evt->ax[1], cs, evt, f);
+}
+
 void handle_payload_in(CPUState *cs, trace_event_t *evt, FILE *f)
 {
     switch (evt->ax[7])
@@ -168,6 +202,9 @@ void handle_payload_out(CPUState *cs, trace_event_t *evt, FILE *f)
 {
     switch (evt->ax[7])
     {
+    case __NR_getcwd:
+        do_getcwd(cs, evt, f);
+        break;
     case __NR_mknodat:
         do_mknodat(cs, evt, f);
         break;
@@ -191,6 +228,24 @@ void handle_payload_out(CPUState *cs, trace_event_t *evt, FILE *f)
         break;
     case __NR_statfs64:
         do_statfs64(cs, evt, f);
+        break;
+    case __NR_mkdirat:
+        do_mkdirat(cs, evt, f);
+        break;
+    case __NR_unlinkat:
+        do_unlinkat(cs, evt, f);
+        break;
+    case __NR_mount:
+        do_mount(cs, evt, f);
+        break;
+    case __NR_chdir:
+        do_chdir(cs, evt, f);
+        break;
+    case __NR_fchmodat:
+        do_fchmodat(cs, evt, f);
+        break;
+    case __NR_fchownat:
+        do_fchownat(cs, evt, f);
         break;
         /*
     case __NR_writev:
