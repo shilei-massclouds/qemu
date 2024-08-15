@@ -256,6 +256,9 @@ void handle_payload_out(CPUState *cs, trace_event_t *evt, FILE *f)
         handle_path(1, evt->ax[1], cs, evt, f);
         do_fstatat_out(cs, evt, f);
         break;
+    case __NR_utimensat:
+        handle_path(1, evt->ax[1], cs, evt, f);
+        break;
     default:
         ;
     }
