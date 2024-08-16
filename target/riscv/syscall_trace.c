@@ -167,6 +167,12 @@ static void do_unlinkat(CPUState *cs, trace_event_t *evt, FILE *f)
     handle_path(1, evt->ax[1], cs, evt, f);
 }
 
+static void do_symlinkat(CPUState *cs, trace_event_t *evt, FILE *f)
+{
+    handle_path(0, evt->orig_a0, cs, evt, f);
+    handle_path(2, evt->ax[2], cs, evt, f);
+}
+
 static void do_chdir(CPUState *cs, trace_event_t *evt, FILE *f)
 {
     handle_path(0, evt->orig_a0, cs, evt, f);
@@ -251,6 +257,9 @@ void handle_payload_out(CPUState *cs, trace_event_t *evt, FILE *f)
     case __NR_unlinkat:
         do_unlinkat(cs, evt, f);
         break;
+    case __NR_symlinkat:
+        do_symlinkat(cs, evt, f);
+        break;  
     case __NR_mount:
         do_mount(cs, evt, f);
         break;

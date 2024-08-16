@@ -14,6 +14,7 @@
 #define __NR_mknodat    33
 #define __NR_mkdirat    34
 #define __NR_unlinkat   35
+#define __NR_symlinkat  36
 #define __NR_mount      40
 #define __NR_statfs64   43
 #define __NR_faccessat  48
