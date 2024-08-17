@@ -9,13 +9,24 @@
 #include "qemu/log.h"
 #include "cpu.h"
 
+#define __NR_getcwd     17
 #define __NR_ioctl      29
+#define __NR_mknodat    33
+#define __NR_mkdirat    34
+#define __NR_unlinkat   35
+#define __NR_symlinkat  36
+#define __NR_mount      40
+#define __NR_statfs64   43
 #define __NR_faccessat  48
+#define __NR_chdir      49
+#define __NR_fchmodat   53
+#define __NR_fchownat   54
 #define __NR_openat     56
 #define __NR_read       63
 #define __NR_write      64
 #define __NR_writev     66
 #define __NR_fstatat    79
+#define __NR_utimensat  88
 #define __NR_rt_sigaction 134
 
 #define __NR_set_tid_address 96
