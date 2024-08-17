@@ -17,6 +17,7 @@
 #define __NR_writev     66
 #define __NR_fstatat    79
 #define __NR_rt_sigaction 134
+#define __NR_rt_sigprocmask 135
 
 #define __NR_set_tid_address 96
 #define __NR_set_robust_list 99
