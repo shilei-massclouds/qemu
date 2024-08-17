@@ -131,8 +131,10 @@ static void do_rt_sigaction(CPUState *cs, trace_event_t *evt, FILE *f)
 
     uint8_t data[24];
     if (evt->ax[0] == 0) {
-        cpu_memory_rw_debug(cs, evt->ax[1], data, sizeof(data), 0);
-        lk_trace_payload(1, evt, data, sizeof(data), f);
+        if (evt->ax[1] != 0) {
+            cpu_memory_rw_debug(cs, evt->ax[1], data, sizeof(data), 0);
+            lk_trace_payload(1, evt, data, sizeof(data), f);
+        }
     }
 }
 
