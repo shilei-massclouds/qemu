@@ -131,8 +131,25 @@ static void do_rt_sigaction(CPUState *cs, trace_event_t *evt, FILE *f)
 
     uint8_t data[24];
     if (evt->ax[0] == 0) {
-        cpu_memory_rw_debug(cs, evt->ax[1], data, sizeof(data), 0);
-        lk_trace_payload(1, evt, data, sizeof(data), f);
+        if (evt->ax[1] != 0) {
+            cpu_memory_rw_debug(cs, evt->ax[1], data, sizeof(data), 0);
+            lk_trace_payload(1, evt, data, sizeof(data), f);
+        }
+    }
+}
+
+static void do_rt_sigprocmask(CPUState *cs, trace_event_t *evt, FILE *f)
+{
+    uint64_t data;
+    if (evt->ax[0] == 0) {
+        if (evt->ax[1]) {
+            cpu_memory_rw_debug(cs, evt->ax[1], &data, sizeof(data), 0);
+            lk_trace_payload(1, evt, &data, sizeof(data), f);
+        }
+        if (evt->ax[2]) {
+            cpu_memory_rw_debug(cs, evt->ax[2], &data, sizeof(data), 0);
+            lk_trace_payload(2, evt, &data, sizeof(data), f);
+        }
     }
 }
 
@@ -271,6 +288,9 @@ void handle_payload_out(CPUState *cs, trace_event_t *evt, FILE *f)
         break;
     case __NR_fchownat:
         do_fchownat(cs, evt, f);
+        break;
+    case __NR_rt_sigprocmask:
+        do_rt_sigprocmask(cs, evt, f);
         break;
         /*
     case __NR_writev:
