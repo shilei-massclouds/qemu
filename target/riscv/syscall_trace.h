@@ -22,6 +22,7 @@
 #define __NR_fchmodat   53
 #define __NR_fchownat   54
 #define __NR_openat     56
+#define __NR_pipe2      59
 #define __NR_read       63
 #define __NR_write      64
 #define __NR_writev     66

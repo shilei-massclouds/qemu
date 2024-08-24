@@ -209,6 +209,15 @@ static void do_fchownat(CPUState *cs, trace_event_t *evt, FILE *f)
     handle_path(1, evt->ax[1], cs, evt, f);
 }
 
+static void do_pipe2(CPUState *cs, trace_event_t *evt, FILE *f)
+{
+    if (evt -> ax[0] == 0) {
+        uint8_t data[16];
+        cpu_memory_rw_debug(cs, evt->orig_a0, data, sizeof(data), 0);
+        lk_trace_payload(0, evt, data, sizeof(data), f);
+    }
+}
+
 static void do_prlimit64(CPUState *cs, trace_event_t *evt, FILE *f)
 {
     if (evt->ax[0] == 0) {
@@ -288,6 +297,9 @@ void handle_payload_out(CPUState *cs, trace_event_t *evt, FILE *f)
         break;
     case __NR_fchownat:
         do_fchownat(cs, evt, f);
+        break;
+    case __NR_pipe2:
+        do_pipe2(cs, evt, f);
         break;
     case __NR_rt_sigprocmask:
         do_rt_sigprocmask(cs, evt, f);
