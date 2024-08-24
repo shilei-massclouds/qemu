@@ -16,7 +16,11 @@ static void formalize_str(uint8_t *data, size_t size)
 static void handle_path(int index, CPUState *cs, trace_event_t *evt, FILE *f)
 {
     uint8_t data[64];
-    cpu_memory_rw_debug(cs, evt->ax[index], data, sizeof(data), 0);
+    if (index == 0 && evt->inout == 1) {
+        cpu_memory_rw_debug(cs, evt->orig_a0, data, sizeof(data), 0);
+    } else {
+        cpu_memory_rw_debug(cs, evt->ax[index], data, sizeof(data), 0);
+    }
     formalize_str(data, sizeof(data));
     lk_trace_payload(index, evt, data, sizeof(data), f);
 }
@@ -195,9 +199,18 @@ void handle_payload_out(CPUState *cs, trace_event_t *evt, FILE *f)
         do_writev_event(cs, evt, f);
         break;
         */
+    case __NR_unlinkat:
+        handle_path(1, cs, evt, f);
+        break;
     case __NR_fstatat:
         handle_path(1, cs, evt, f);
         do_fstatat_out(cs, evt, f);
+        break;
+    case __NR_getcwd:
+        handle_path(0, cs, evt, f);
+        break;
+    case __NR_chdir:
+        handle_path(0, cs, evt, f);
         break;
     default:
         ;
