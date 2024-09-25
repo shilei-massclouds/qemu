@@ -6,7 +6,7 @@ build:
 run: build
 	@cargo run --release
 
-install:
+install: build
 	@cargo install lktrace --path=.
 
 clean:
