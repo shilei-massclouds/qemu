@@ -25,10 +25,10 @@ const DEFAULT_DATA_FILE: &str = "./lk_trace.data";
 #[command(version, about, long_about = None)]
 #[command(propagate_version = true)]
 struct Cli {
-    /// Parse level for trace
-    /// 0: Raw output
-    /// 1 (default): group trace events by thead.
-    /// 2: replace ids with seq-names.
+    /// Parse level for trace.
+    /// 0: Raw output;
+    /// 1 (default): group trace events by thead;
+    /// 2: replace ids with seq-names
     #[arg(short)]
     level: Option<usize>,
 
@@ -37,7 +37,18 @@ struct Cli {
 }
 
 fn main() {
-    let _ = SimpleLogger::init(LevelFilter::Info, Config::default());
+    let log_level = std::env::var("LOG").unwrap_or(String::from("err"));
+    println!("level: {}", log_level);
+
+    let log_filter = match log_level.as_str() {
+        "err" => LevelFilter::Error,
+        "warn" => LevelFilter::Warn,
+        "info" => LevelFilter::Info,
+        "debug" => LevelFilter::Debug,
+        _ => LevelFilter::Error,
+    };
+
+    let _ = SimpleLogger::init(log_filter, Config::default());
 
     let cli = Cli::parse();
 

@@ -19,6 +19,7 @@
 #define __NR_write      64
 #define __NR_writev     66
 #define __NR_fstatat    79
+#define __NR_exit       93
 #define __NR_rt_sigaction 134
 #define __NR_rt_sigprocmask 135
 

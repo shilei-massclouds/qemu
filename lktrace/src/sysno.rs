@@ -65,3 +65,6 @@ pub const SYS_SET_ROBUST_LIST: u64 = 0x63;
 pub const SYS_CLOCK_GETTIME: u64 = 0x71;
 //pub const SYS_CLOCK_NANOSLEEP: u64 = 0x73;
 //pub const SYS_SCHED_GETAFFINITY: u64 = 0x7b;
+//
+
+pub const MAX_SYSCALL_NBR: u64 = 451;

@@ -1779,11 +1779,14 @@ void riscv_cpu_do_interrupt(CPUState *cs)
         lk_trace_submit(offset, &evt, f);
         lk_trace_unlock(f);
 
-        env->last_scause = RISCV_EXCP_U_ECALL;
-        env->last_a0 = env->gpr[xA0];
+        if (env->gpr[xA7] != __NR_exit) {
+            env->last_scause = RISCV_EXCP_U_ECALL;
+            env->last_a0 = env->gpr[xA0];
+        }
 
 #if 0
-        printf("[in:%lu] tp: %lx sscratch: %lx\n", env->gpr[xA7], env->gpr[xTP], env->sscratch);
+        printf("[in:%lu] tp: %lx sscratch: %lx\n",
+               env->gpr[xA7], env->gpr[xTP], env->sscratch);
 #endif
     }
 
