@@ -1779,7 +1779,11 @@ void riscv_cpu_do_interrupt(CPUState *cs)
         lk_trace_submit(offset, &evt, f);
         lk_trace_unlock(f);
 
-        if (env->gpr[xA7] != __NR_exit) {
+        if (env->gpr[xA7] == __NR_exit ||
+            env->gpr[xA7] == __NR_exit_group) {
+            env->last_scause = 0;
+            env->last_a0 = 0;
+        } else {
             env->last_scause = RISCV_EXCP_U_ECALL;
             env->last_a0 = env->gpr[xA0];
         }
