@@ -14,7 +14,10 @@ pub(crate) fn analyse(path: &str) -> Result<()> {
         println!("tid: {:#x} -> ({})[{:#x}, {:#x}, {}]; pid: {:#x}",
             evt.head.sscratch, evt.head.inout, evt.head.cause,
             evt.head.epc, evt.head.ax[7], evt.head.satp);
-        assert!(evt.head.ax[7] < MAX_SYSCALL_NBR);
+
+        if evt.head.ax[7] >= MAX_SYSCALL_NBR {
+            println!("WARNING! bad sysno {:#x}", evt.head.ax[7]);
+        }
 
         filesize -= advance;
     }

@@ -1792,6 +1792,10 @@ void riscv_cpu_do_interrupt(CPUState *cs)
         printf("[in:%lu] tp: %lx sscratch: %lx\n",
                env->gpr[xA7], env->gpr[xTP], env->sscratch);
 #endif
+        if (env->gpr[xA7] >= 451) {
+            printf("************* [in] bad sysno: %lu, %lx **********\n",
+                   env->gpr[xA7], env->gpr[xA7]);
+        }
     }
 
     if (env->priv <= PRV_S && cause < 64 &&

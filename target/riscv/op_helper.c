@@ -344,7 +344,7 @@ target_ulong helper_sret(CPURISCVState *env)
 #endif
 
         if (env->gpr[xA7] >= 451) {
-            printf("************* bad sysno: %lu, %lx **********\n",
+            printf("************* [out] bad sysno: %lu, %lx **********\n",
                    env->gpr[xA7], env->gpr[xA7]);
         }
     }
